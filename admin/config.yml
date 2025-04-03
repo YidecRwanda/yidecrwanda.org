@@ -1,14 +1,14 @@
 backend:
   name: git-gateway
-  branch: main  # Specify the branch you want to work with (e.g., 'main' or 'master')
+  branch: main  # Make sure this matches your repository's default branch (usually 'main' or 'master')
 
-media_folder: "static/images/uploads"  # The folder where images will be stored
-public_folder: "/images/uploads"      # The public URL path to the images
+media_folder: "static/images/uploads"  # Folder where images will be stored
+public_folder: "/images/uploads"      # Public URL path to images
 
 collections:
-  - name: "posts"  # The name of the collection for posts
+  - name: "posts"
     label: "Blog Posts"
-    folder: "content/posts"  # The folder where posts will be stored
+    folder: "content/posts"
     create: true
     fields:
       - { label: "Title", name: "title", widget: "string" }
