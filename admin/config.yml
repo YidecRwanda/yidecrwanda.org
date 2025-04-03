@@ -1,16 +1,20 @@
 backend:
   name: git-gateway
-  branch: main  # Make sure this matches your repository's default branch (usually 'main' or 'master')
+  branch: main  # Your repository's default branch
 
-media_folder: "static/images/uploads"  # Folder where images will be stored
-public_folder: "/images/uploads"      # Public URL path to images
+media_folder: "static/images"
+public_folder: "/images"
 
 collections:
-  - name: "posts"
+  - name: "blog"
     label: "Blog Posts"
-    folder: "content/posts"
+    folder: "content/blog"
     create: true
+    slug: "{{year}}/{{month}}/{{day}}-{{slug}}"
     fields:
       - { label: "Title", name: "title", widget: "string" }
-      - { label: "Date", name: "date", widget: "datetime" }
       - { label: "Body", name: "body", widget: "markdown" }
+      - { label: "Date", name: "date", widget: "datetime" }
+
+admin:
+  url: "https://yidecrwanda.netlify.app/admin/"
