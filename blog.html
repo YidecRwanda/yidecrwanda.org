@@ -131,15 +131,15 @@
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0'); // Ensure two-digit format
 
-            // Fetch posts from dynamic path: content/blog/YYYY/MM/
-            const response = await fetch(`/content/blog/${year}/${month}/`);
-            
+            // Corrected fetch path to include 'content/' at the root level
+            const response = await fetch(`/content/blog/${year}/${month}/index.json`); 
+
             if (!response.ok) {
                 document.getElementById('blog-container').innerHTML = "<p>No posts found.</p>";
                 return;
             }
 
-            const posts = await response.json(); // Assuming posts are stored in JSON format
+            const posts = await response.json(); // Ensure your CMS outputs JSON data
 
             // Sort posts by date (newest first)
             posts.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -182,7 +182,6 @@
 
         loadPosts();
     </script>
-
 <!-- Closing Blog Posts-->
 
     <!-- Footer Start -->
