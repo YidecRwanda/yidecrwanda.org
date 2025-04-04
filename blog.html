@@ -30,6 +30,8 @@
 
     <!-- Template Stylesheet -->
     <link href="css/style.css" rel="stylesheet">
+    <!--Converting blog contents from .md to html-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.12/marked.min.js"></script> <!-- Markdown Parser -->
 </head>
 
 
@@ -113,8 +115,7 @@
 <!-- Stsrting Blog Posts-->
 
 <h1>Blog Posts</h1>
-
-    <!-- Date Filter Dropdown -->
+    
     <label for="filter">Filter by Date:</label>
     <select id="filter">
         <option value="all">All</option>
@@ -129,37 +130,60 @@
         async function loadPosts() {
             const now = new Date();
             const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0'); // Ensure two-digit format
+            const month = String(now.getMonth() + 1).padStart(2, '0'); 
 
-            // Corrected fetch path to include 'content/' at the root level
-            const response = await fetch(`/content/blog/${year}/${month}/index.json`); 
+            // Fetch Markdown files from the correct folder
+            try {
+                const response = await fetch(`/content/blog/${year}/${month}/`); 
 
-            if (!response.ok) {
-                document.getElementById('blog-container').innerHTML = "<p>No posts found.</p>";
-                return;
+                if (!response.ok) {
+                    document.getElementById('blog-container').innerHTML = "<p>No posts found.</p>";
+                    return;
+                }
+
+                const fileList = await response.text();
+                const mdFiles = fileList.match(/[\w-]+\.md/g); // Extract .md filenames
+
+                if (!mdFiles || mdFiles.length === 0) {
+                    document.getElementById('blog-container').innerHTML = "<p>No posts available.</p>";
+                    return;
+                }
+
+                const posts = [];
+
+                for (const file of mdFiles) {
+                    const postResponse = await fetch(`/content/blog/${year}/${month}/${file}`);
+                    const markdown = await postResponse.text();
+                    posts.push({ file, content: marked.parse(markdown) });
+                }
+
+                // Sort posts by date (if date is in filename)
+                posts.sort((a, b) => {
+                    const dateA = new Date(a.file.split('-')[0]); // Assuming filename starts with date
+                    const dateB = new Date(b.file.split('-')[0]);
+                    return dateB - dateA;
+                });
+
+                displayPosts(posts);
+
+                document.getElementById("filter").addEventListener("change", function () {
+                    const filteredPosts = filterPosts(posts, this.value);
+                    displayPosts(filteredPosts);
+                });
+
+            } catch (error) {
+                console.error("Error loading posts:", error);
+                document.getElementById('blog-container').innerHTML = "<p>Error loading posts.</p>";
             }
-
-            const posts = await response.json(); // Ensure your CMS outputs JSON data
-
-            // Sort posts by date (newest first)
-            posts.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            displayPosts(posts);
-
-            // Handle filtering
-            document.getElementById("filter").addEventListener("change", function () {
-                const filteredPosts = filterPosts(posts, this.value);
-                displayPosts(filteredPosts);
-            });
         }
 
         function displayPosts(posts) {
             const container = document.getElementById('blog-container');
-            container.innerHTML = ""; // Clear previous posts
+            container.innerHTML = ""; 
 
             posts.forEach(post => {
                 const postElement = document.createElement('div');
-                postElement.innerHTML = `<h2>${post.title}</h2><p>${post.date}</p><p>${post.body}</p>`;
+                postElement.innerHTML = `<h2>${post.file.replace('.md', '')}</h2>${post.content}`;
                 container.appendChild(postElement);
             });
         }
@@ -167,7 +191,7 @@
         function filterPosts(posts, filter) {
             const now = new Date();
             return posts.filter(post => {
-                const postDate = new Date(post.date);
+                const postDate = new Date(post.file.split('-')[0]);
 
                 if (filter === "last-7-days") {
                     return (now - postDate) / (1000 * 60 * 60 * 24) <= 7;
@@ -176,13 +200,13 @@
                 } else if (filter === "last-year") {
                     return (now - postDate) / (1000 * 60 * 60 * 24) <= 365;
                 }
-                return true; // Show all posts if "all" is selected
+                return true;
             });
         }
 
         loadPosts();
     </script>
-<!-- Closing Blog Posts-->
+    <!-- Closing Blog Posts-->
 
     <!-- Footer Start -->
     <div class="container-fluid bg-dark text-light footer pt-5 mt-5 wow fadeIn" data-wow-delay="0.1s">
