@@ -139,11 +139,11 @@
     const filterSelect = document.getElementById('filter');
 
     const blogPaths = [
-      "2025/04/04-yidec-rwanda-youth-impacts-development-and-environmental-change.md"
+      "static/content/blog/2025/04/04-yidec-rwanda-youth-impacts-development-and-environmental-change.md"
     ];
 
     async function fetchPost(path) {
-      const url = `/content/blog/${path}`;
+      const url = `static/content/blog/${path}`;
       const res = await fetch(url);
       if (!res.ok) return null;
 
