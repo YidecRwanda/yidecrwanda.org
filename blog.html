@@ -31,7 +31,8 @@
     <!-- Template Stylesheet -->
     <link href="css/style.css" rel="stylesheet">
     <!--Converting blog contents from .md to html-->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.12/marked.min.js"></script> <!-- Markdown Parser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.12/marked.min.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
    <style>
     body { font-family: Arial; padding: 20px; }
     .post { margin-bottom: 40px; border-bottom: 1px solid #ccc; padding-bottom: 20px; }
@@ -120,89 +121,87 @@
 
 <!-- Stsrting Blog Posts-->
 
-<h1>Our Blog</h1>
+<h1>Latest Blog Posts</h1>
 
   <div class="filter">
-    <label for="filter">Filter by Date:</label>
-    <select id="filter">
-      <option value="all">All</option>
-      <option value="last-7-days">Last 7 Days</option>
-      <option value="last-30-days">Last 30 Days</option>
-      <option value="last-year">Last Year</option>
-    </select>
+    <label for="dateFilter">Filter by Date:</label>
+    <input type="month" id="dateFilter" onchange="filterPostsByDate()">
   </div>
 
   <div id="posts"></div>
 
   <script>
     const postsContainer = document.getElementById('posts');
-    const filterSelect = document.getElementById('filter');
+    let allPosts = [];
 
-    const blogPaths = [
-      "static/content/blog/2025/04/04-yidec-rwanda-youth-impacts-development-and-environmental-change.md"
-    ];
+    // Attempt to find files at known paths
+    async function fetchPosts() {
+      const year = new Date().getFullYear();
+      const months = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+      const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'));
 
-    async function fetchPost(path) {
-      const url = `static/content/blog/${path}`;
-      const res = await fetch(url);
-      if (!res.ok) return null;
+      const attempts = [];
 
-      const markdown = await res.text();
-      const html = marked.parse(markdown);
-      const filename = path.split('/').pop().replace('.md', '');
-      const date = filename.slice(0, 10); // YYYY-MM-DD
-      const title = filename.slice(11).replace(/-/g, ' '); // everything after the date
-      return { date: new Date(date), title, html };
-    }
-
-    async function loadPosts() {
-      const posts = [];
-      for (const path of blogPaths) {
-        const post = await fetchPost(path);
-        if (post) posts.push(post);
+      for (let y = year; y >= 2023; y--) {
+        for (const m of months) {
+          for (const d of days) {
+            // Try possible slugs
+            const base = `static/content/blog/${y}/${m}/${y}-${m}-${d}`;
+            for (const slug of ['my-post', 'another-post', 'post']) {
+              const path = `${base}-${slug}.md`;
+              attempts.push(checkFile(path));
+            }
+          }
+        }
       }
 
-      posts.sort((a, b) => b.date - a.date);
-      displayPosts(posts);
-
-      filterSelect.addEventListener('change', () => {
-        const filtered = applyFilter(posts);
-        displayPosts(filtered);
-      });
+      const results = await Promise.all(attempts);
+      allPosts = results.filter(Boolean).sort((a, b) => b.date - a.date);
+      renderPosts(allPosts);
     }
 
-    function applyFilter(posts) {
-      const filter = filterSelect.value;
-      const now = new Date();
-      return posts.filter(post => {
-        const days = (now - post.date) / (1000 * 60 * 60 * 24);
-        if (filter === "last-7-days") return days <= 7;
-        if (filter === "last-30-days") return days <= 30;
-        if (filter === "last-year") return days <= 365;
-        return true;
-      });
+    async function checkFile(path) {
+      try {
+        const res = await fetch(path);
+        if (!res.ok) return null;
+        const text = await res.text();
+        const html = marked.parse(text);
+        const dateMatch = path.match(/(\d{4})\/(\d{2})\/(\d{2})/);
+        const date = dateMatch ? new Date(`${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`) : new Date();
+        return { html, date };
+      } catch {
+        return null;
+      }
     }
 
-    function displayPosts(posts) {
-      postsContainer.innerHTML = "";
+    function renderPosts(posts) {
+      postsContainer.innerHTML = '';
       if (posts.length === 0) {
-        postsContainer.innerHTML = "<p>No posts found.</p>";
+        postsContainer.innerHTML = '<p>No posts found.</p>';
         return;
       }
-
       posts.forEach(post => {
         const div = document.createElement('div');
         div.className = 'post';
-        div.innerHTML = `
-          <h2>${post.title}</h2>
-          <p><em>${post.date.toDateString()}</em></p>
-          ${post.html}
-        `;
+        div.innerHTML = post.html;
         postsContainer.appendChild(div);
       });
     }
 
-    loadPosts();
+    function filterPostsByDate() {
+      const value = document.getElementById('dateFilter').value;
+      if (!value) {
+        renderPosts(allPosts);
+        return;
+      }
+      const [year, month] = value.split('-');
+      const filtered = allPosts.filter(post =>
+        post.date.getFullYear() == year && (post.date.getMonth() + 1) == parseInt(month)
+      );
+      renderPosts(filtered);
+    }
+
+    fetchPosts();
   </script>
     <!-- Closing Blog Posts-->
 
