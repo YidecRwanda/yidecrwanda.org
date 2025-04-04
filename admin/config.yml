@@ -1,6 +1,7 @@
 backend:
   name: git-gateway
-  branch: main  # Your repository's default branch
+  branch: main
+  auth: true  # Allows open signups
 
 media_folder: "static/images"
 public_folder: "/images"
