@@ -1,0 +1,13 @@
+{
+  "name": "yidecrwanda-org",
+  "version": "1.0.0",
+  "description": "Static site blog index generator",
+  "main": "generate-blog-index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node generate-blog-index.js"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3"
+  }
+}
