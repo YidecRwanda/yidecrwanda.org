@@ -18,7 +18,8 @@ jobs:
 
       - run: npm install
 
-      - run: node generate-blog-index.js
+      - name: Generate blog index
+        run: node generate-blog-index.cjs   # ✅ Updated from .js to .cjs
 
       - name: Commit and push
         env:
