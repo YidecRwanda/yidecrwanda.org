@@ -1,34 +1,40 @@
-// generateIndex.js
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const BLOG_DIR = path.join(__dirname, 'static/content/blog');
-const OUTPUT_FILE = path.join(BLOG_DIR, 'index.json');
+const BLOG_ROOT = path.join(__dirname, "static/content/blog");
+const OUTPUT_FILE = path.join(BLOG_ROOT, "index.json");
 
-function walk(dir) {
-  let results = [];
-  const list = fs.readdirSync(dir);
+function getAllMarkdownFiles(dir, files = []) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
 
-  list.forEach(file => {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-
-    if (stat && stat.isDirectory()) {
-      results = results.concat(walk(filePath));
-    } else if (file.endsWith('.md')) {
-      const relPath = path.relative(__dirname, filePath).replace(/\\/g, '/');
-      const stats = fs.statSync(filePath);
-      results.push({
-        path: relPath,
-        date: stats.mtime.toISOString(),
-      });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      getAllMarkdownFiles(fullPath, files);
+    } else if (entry.isFile() && entry.name.endsWith(".md")) {
+      files.push(fullPath);
     }
-  });
+  }
 
-  return results;
+  return files;
 }
 
-const posts = walk(BLOG_DIR).sort((a, b) => new Date(b.date) - new Date(a.date));
+function getFileMetadata(filePath) {
+  const stat = fs.statSync(filePath);
+  return {
+    path: path.relative(BLOG_ROOT, filePath).replace(/\\/g, "/"),
+    date: stat.mtime.toISOString()
+  };
+}
 
-fs.writeFileSync(OUTPUT_FILE, JSON.stringify(posts, null, 2));
-console.log(`Generated ${posts.length} posts in ${OUTPUT_FILE}`);
+function generateIndex() {
+  const markdownFiles = getAllMarkdownFiles(BLOG_ROOT);
+  const posts = markdownFiles.map(getFileMetadata);
+
+  posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(posts, null, 2));
+  console.log(`✅ index.json updated with ${posts.length} posts`);
+}
+
+generateIndex();
