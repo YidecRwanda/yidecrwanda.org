@@ -5,43 +5,38 @@ const matter = require('gray-matter');
 const BLOG_DIR = path.join(__dirname, 'static', 'content', 'blog');
 const OUTPUT_FILE = path.join(BLOG_DIR, 'index.json');
 
-function getAllMarkdownFiles(dir) {
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  const files = [];
-
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      const nestedFiles = getAllMarkdownFiles(fullPath);
-      files.push(...nestedFiles);
-    } else if (entry.isFile() && entry.name.endsWith('.md')) {
-      files.push(fullPath);
+function getAllMarkdownFiles(dirPath, arrayOfFiles = []) {
+  const files = fs.readdirSync(dirPath);
+  files.forEach((file) => {
+    const fullPath = path.join(dirPath, file);
+    if (fs.statSync(fullPath).isDirectory()) {
+      getAllMarkdownFiles(fullPath, arrayOfFiles);
+    } else if (file.endsWith('.md')) {
+      arrayOfFiles.push(fullPath);
     }
-  }
-
-  return files;
+  });
+  return arrayOfFiles;
 }
 
-function generateIndex() {
-  const files = getAllMarkdownFiles(BLOG_DIR);
-
-  const posts = files.map((filePath) => {
-    const fileContent = fs.readFileSync(filePath, 'utf8');
+function generateBlogIndex() {
+  const markdownFiles = getAllMarkdownFiles(BLOG_DIR);
+  const blogIndex = markdownFiles.map((filePath) => {
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
     const { data } = matter(fileContent);
-    const relativePath = path.relative(BLOG_DIR, filePath);
-    const slug = relativePath.replace(/\.md$/, '');
 
     return {
-      title: data.title || 'Untitled',
-      date: data.date || null,
-      path: slug.replace(/\\/g, '/'),
+      title: data.title || 'Untitled Post',
+      description: data.description || '',
+      date: data.date || new Date(fs.statSync(filePath).mtime).toISOString(),
+      path: filePath.replace(__dirname + '/', '') // relative path
     };
   });
 
-  posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+  // Sort by date (newest first)
+  blogIndex.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(posts, null, 2), 'utf8');
-  console.log(`✅ Blog index generated with ${posts.length} posts`);
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(blogIndex, null, 2));
+  console.log(`✅ index.json generated with ${blogIndex.length} posts.`);
 }
 
-generateIndex();
+generateBlogIndex();
