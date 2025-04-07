@@ -1,32 +1,47 @@
 const fs = require('fs');
 const path = require('path');
+const matter = require('gray-matter');
 
-const blogFolder = path.join(__dirname, 'static', 'content', 'blog');
-const outputFile = path.join(blogFolder, 'index.json');
+const BLOG_DIR = path.join(__dirname, 'static', 'content', 'blog');
+const OUTPUT_FILE = path.join(BLOG_DIR, 'index.json');
 
-function walk(dir) {
-  let files = [];
-  for (const file of fs.readdirSync(dir)) {
-    const fullPath = path.join(dir, file);
-    if (fs.statSync(fullPath).isDirectory()) {
-      files = files.concat(walk(fullPath));
-    } else if (file.endsWith('.md')) {
+function getAllMarkdownFiles(dir) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      const nestedFiles = getAllMarkdownFiles(fullPath);
+      files.push(...nestedFiles);
+    } else if (entry.isFile() && entry.name.endsWith('.md')) {
       files.push(fullPath);
     }
   }
+
   return files;
 }
 
-const allFiles = walk(blogFolder);
+function generateIndex() {
+  const files = getAllMarkdownFiles(BLOG_DIR);
 
-const posts = allFiles.map(filepath => {
-  const content = fs.readFileSync(filepath, 'utf-8');
-  const match = content.match(/date:\s*(.*)/i);
-  const date = match ? new Date(match[1]) : new Date();
-  const relativePath = filepath.split('static/')[1];
-  return { path: 'static/' + relativePath.replace(/\\/g, '/'), date: date.toISOString() };
-});
+  const posts = files.map((filePath) => {
+    const fileContent = fs.readFileSync(filePath, 'utf8');
+    const { data } = matter(fileContent);
+    const relativePath = path.relative(BLOG_DIR, filePath);
+    const slug = relativePath.replace(/\.md$/, '');
 
-fs.writeFileSync(outputFile, JSON.stringify(posts, null, 2));
-console.log(`✅ index.json generated with ${posts.length} posts.`);
+    return {
+      title: data.title || 'Untitled',
+      date: data.date || null,
+      path: slug.replace(/\\/g, '/'),
+    };
+  });
 
+  posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(posts, null, 2), 'utf8');
+  console.log(`✅ Blog index generated with ${posts.length} posts`);
+}
+
+generateIndex();
