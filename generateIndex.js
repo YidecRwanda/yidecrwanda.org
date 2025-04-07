@@ -4,46 +4,59 @@ const path = require("path");
 const BLOG_ROOT = path.join(__dirname, "static/content/blog");
 const OUTPUT_FILE = path.join(BLOG_ROOT, "index.json");
 
+// Recursively get all markdown files
 function getAllMarkdownFiles(dir) {
   let results = [];
-  const list = fs.readdirSync(dir);
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
 
-  list.forEach(file => {
-    const fullPath = path.join(dir, file);
-    const stat = fs.statSync(fullPath);
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
 
-    if (stat && stat.isDirectory()) {
+    if (entry.isDirectory()) {
       results = results.concat(getAllMarkdownFiles(fullPath));
-    } else if (file.endsWith(".md")) {
+    } else if (
+      entry.isFile() &&
+      entry.name.endsWith(".md") &&
+      !entry.name.endsWith("index.json") // prevent indexing the index itself
+    ) {
       results.push(fullPath);
     }
-  });
+  }
 
   return results;
 }
 
+// Get metadata for each post
 function getFileMetadata(filePath) {
   const stat = fs.statSync(filePath);
   return {
-    path: path.relative("static", filePath).replace(/\\/g, "/"),
+    path: path.relative(path.join(__dirname, "static"), filePath).replace(/\\/g, "/"),
     date: stat.mtime.toISOString()
   };
 }
 
+// Generate the blog index
 function generateIndex() {
-  const markdownFiles = getAllMarkdownFiles(BLOG_ROOT);
-  
-  // Debug log to check what files are being picked up
-  console.log("📄 Files found:");
-  markdownFiles.forEach(f => console.log(" -", f));
+  try {
+    const markdownFiles = getAllMarkdownFiles(BLOG_ROOT);
 
-  console.log(`🔍 Found ${markdownFiles.length} markdown files`);
+    if (markdownFiles.length === 0) {
+      console.log("⚠️  No markdown files found.");
+      return;
+    }
 
-  const posts = markdownFiles.map(getFileMetadata);
-  posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    console.log("📄 Found markdown files:");
+    markdownFiles.forEach(f => console.log(" -", f));
 
-  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(posts, null, 2));
-  console.log(`✅ Successfully wrote ${posts.length} entries to index.json`);
+    const posts = markdownFiles.map(getFileMetadata);
+    posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(posts, null, 2));
+    console.log(`✅ Successfully wrote ${posts.length} entries to index.json`);
+  } catch (err) {
+    console.error("❌ Error generating index:", err.message);
+    process.exit(1);
+  }
 }
 
 generateIndex();
