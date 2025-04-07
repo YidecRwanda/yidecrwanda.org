@@ -246,7 +246,7 @@
     <script src="js/main.js"></script>
 
     <!--Load and Display Posts-->
-    <script>
+<!--     <script>
   async function loadBlogPosts() {
     try {
       const response = await fetch('/static/content/blog/index.json');
@@ -255,9 +255,9 @@
       const container = document.getElementById('blog-posts');
       if (!container) return;
 
-      container.innerHTML = ''; // clear placeholder
+      container.innerHTML = ''; // clear placeholder -->
 
-      posts.forEach(post => {
+<!--       posts.forEach(post => {
         const postElement = document.createElement('div');
         postElement.classList.add('blog-post');
         postElement.innerHTML = `
@@ -274,7 +274,7 @@
   }
 
   window.addEventListener('DOMContentLoaded', loadBlogPosts);
-</script>
+</script> -->
 
 </body>
 </html>
