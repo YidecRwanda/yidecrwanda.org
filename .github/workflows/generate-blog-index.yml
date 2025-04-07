@@ -1,4 +1,4 @@
-name: Generate Blog Index
+name: Commit and push updated index
 
 on:
   push:
@@ -29,5 +29,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add static/content/blog/index.json
-          git commit -m "Update blog index [skip ci]" || echo "No changes to commit"
-          git push
+          git commit -m "Auto-generate index.json [skip ci]" || echo "No changes to commit"
+          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/YidecRwanda/yidecrwanda.org.git HEAD:main
