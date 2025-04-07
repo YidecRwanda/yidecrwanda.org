@@ -1,1 +1,44 @@
+name: Generate Blog Index
+
+on:
+  push:
+    paths:
+      - 'static/content/blog/**.md'
+      - '.github/workflows/generate-blog-index.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Generate index.json
+        run: |
+          mkdir -p static/content/blog
+          echo "[" > static/content/blog/index.json
+          first=1
+          find static/content/blog -name '*.md' | sort | while read filepath; do
+            title=$(grep '^title:' "$filepath" | sed 's/title: //;s/"//g')
+            date=$(grep '^date:' "$filepath" | sed 's/date: //;s/"//g')
+            relpath=${filepath#static/}
+            if [ $first -eq 0 ]; then echo "," >> static/content/blog/index.json; fi
+            echo "  {\"title\": \"${title}\", \"date\": \"${date}\", \"path\": \"/static/${relpath}\"}" >> static/content/blog/index.json
+            first=0
+          done
+          echo "]" >> static/content/blog/index.json
+
+      - name: Commit and push index.json
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add static/content/blog/index.json
+          git commit -m "Auto-generate index.json"
+          git push
 
