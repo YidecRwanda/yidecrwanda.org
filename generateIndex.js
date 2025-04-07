@@ -32,6 +32,11 @@ function getFileMetadata(filePath) {
 
 function generateIndex() {
   const markdownFiles = getAllMarkdownFiles(BLOG_ROOT);
+  
+  // Debug log to check what files are being picked up
+  console.log("📄 Files found:");
+  markdownFiles.forEach(f => console.log(" -", f));
+
   console.log(`🔍 Found ${markdownFiles.length} markdown files`);
 
   const posts = markdownFiles.map(getFileMetadata);
