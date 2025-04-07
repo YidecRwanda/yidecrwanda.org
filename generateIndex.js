@@ -16,8 +16,7 @@ function getAllMarkdownFiles(dir) {
       results = results.concat(getAllMarkdownFiles(fullPath));
     } else if (
       entry.isFile() &&
-      entry.name.endsWith(".md") &&
-      !entry.name.endsWith("index.json") // prevent indexing the index itself
+      entry.name.endsWith(".md")
     ) {
       results.push(fullPath);
     }
