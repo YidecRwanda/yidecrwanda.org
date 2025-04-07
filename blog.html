@@ -74,7 +74,7 @@
     <!-- Navbar & Hero End -->
 
 <!--Starting of Blog-->
-
+<div id="blog-posts">
     <h1 class="text-center">Latest Blog Posts</h1>
     <div class="container">
       <div class="filter">
@@ -83,6 +83,7 @@
       </div>
       <div id="posts"></div>
     </div>
+</div>
 
     <script>
       const postsContainer = document.getElementById('posts');
@@ -243,5 +244,37 @@
 
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
+
+    <!--Load and Display Posts-->
+    <script>
+  async function loadBlogPosts() {
+    try {
+      const response = await fetch('/static/content/blog/index.json');
+      const posts = await response.json();
+
+      const container = document.getElementById('blog-posts');
+      if (!container) return;
+
+      container.innerHTML = ''; // clear placeholder
+
+      posts.forEach(post => {
+        const postElement = document.createElement('div');
+        postElement.classList.add('blog-post');
+        postElement.innerHTML = `
+          <h3><a href="/${post.path}">${post.title}</a></h3>
+          <p>${new Date(post.date).toLocaleDateString()}</p>
+          <p>${post.description}</p>
+          <hr />
+        `;
+        container.appendChild(postElement);
+      });
+    } catch (error) {
+      console.error('Error loading blog posts:', error);
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', loadBlogPosts);
+</script>
+
 </body>
 </html>
