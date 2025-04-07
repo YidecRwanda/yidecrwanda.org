@@ -27,5 +27,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add static/content/blog/index.json
-          git commit -m "Auto-update index.json [skip ci]" || echo "No changes to commit"
-          git push https://x-access-token:${GH_PAT}@github.com/YidecRwanda/yidecrwanda.org.git HEAD:main
+          git commit -m "Auto-generate index.json [skip ci]" || echo "No changes to commit"
+          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/YidecRwanda/yidecrwanda.org.git HEAD:main
