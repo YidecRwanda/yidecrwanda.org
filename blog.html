@@ -26,6 +26,41 @@
       .post h2 { margin-bottom: 5px; }
       .filter { margin-bottom: 20px; }
     </style>
+
+<!--Styles for the postcards-->
+
+    <style>
+  .post-card {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 30px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    background-color: #fff;
+  }
+
+  .post-card h2 {
+    margin-bottom: 0.2em;
+    font-size: 1.8rem;
+    color: #2c3e50;
+  }
+
+  .post-date {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin-bottom: 1em;
+  }
+
+  .post-content {
+    line-height: 1.7;
+    color: #34495e;
+  }
+</style>
+
+
+<!--Closing of styles for the postcards-->
+
+    
 </head>
 
 <body>
@@ -85,7 +120,7 @@
     </div>
 
 
- <script>
+<script>
   const postsContainer = document.getElementById('posts');
   let allPosts = [];
 
@@ -97,24 +132,22 @@
 
       const posts = await Promise.all(postList.map(async (item) => {
         try {
-          if (!item.Path || !item.Date || !item.Title) return null;
-
-          const res = await fetch('static/' + item.Path);
+          const res = await fetch(item.path);
           if (!res.ok) return null;
 
-          const text = await res.text();
-          const { content } = window.marked.lexer(text).reduce((acc, token) => {
-            if (token.type === 'paragraph' || token.type === 'heading' || token.type === 'text') {
-              acc.content += token.raw;
-            }
-            return acc;
-          }, { content: '' });
+          const raw = await res.text();
 
-          const html = marked.parse(content);
-          const date = new Date(item.Date);
+          // Clean the raw Markdown: remove title/date lines + **bold** markers
+          const cleaned = raw
+            .split('\n')
+            .filter(line => !/^title:|^date:/i.test(line.trim()))
+            .join('\n')
+            .replace(/\*\*(.*?)\*\*/g, '$1'); // Remove ** from bold text
 
+          const html = marked.parse(cleaned);
+          const date = new Date(item.date);
           return {
-            title: item.Title,
+            title: item.title,
             date,
             html
           };
@@ -127,7 +160,6 @@
       renderPosts(allPosts);
     } catch (err) {
       postsContainer.innerHTML = '<p>No posts found or error loading posts.</p>';
-      console.error(err);
     }
   }
 
@@ -139,15 +171,22 @@
     }
 
     posts.forEach(post => {
-      const div = document.createElement('div');
-      div.className = 'post';
-      div.innerHTML = `
+      const postCard = document.createElement('div');
+      postCard.className = 'post-card';
+
+      const formattedDate = post.date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      postCard.innerHTML = `
         <h2>${post.title}</h2>
-        <small>${post.date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</small>
-        <div>${post.html}</div>
-        <hr>
+        <p class="post-date">${formattedDate}</p>
+        <div class="post-content">${post.html}</div>
       `;
-      postsContainer.appendChild(div);
+
+      postsContainer.appendChild(postCard);
     });
   }
 
