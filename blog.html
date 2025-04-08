@@ -21,6 +21,9 @@
     <link href="css/style.css" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gray-matter@4.0.3/dist/gray-matter.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <style>
       .post { margin-bottom: 40px; border-bottom: 1px solid #ccc; padding-bottom: 20px; }
       .post h2 { margin-bottom: 5px; }
@@ -138,23 +141,19 @@
 
           const raw = await res.text();
 
-          // Split lines and remove title/date from raw Markdown
-          const lines = raw.split('\n').filter(line => {
-            return !/^title:/i.test(line.trim()) && !/^date:/i.test(line.trim());
-          });
-
-          // Join cleaned content and remove **bold** markers
-          const cleanedMarkdown = lines.join('\n').replace(/\*\*(.*?)\*\*/g, '$1');
-          const html = marked.parse(cleanedMarkdown);
-          const date = new Date(item.date);
+          // Use gray-matter to parse frontmatter and content
+          const parsed = matter(raw);
+          const content = parsed.content.replace(/\*\*(.*?)\*\*/g, '$1'); // remove **bold** markers
+          const html = marked.parse(content);
+          const date = new Date(parsed.data.date);
 
           return {
-            title: item.title,
+            title: parsed.data.title,
             date,
             html
           };
         } catch (err) {
-          console.error("Error loading a post:", err);
+          console.error("Error loading post:", err);
           return null;
         }
       }));
@@ -162,7 +161,7 @@
       allPosts = posts.filter(Boolean).sort((a, b) => b.date - a.date);
       renderPosts(allPosts);
     } catch (err) {
-      console.error("Error fetching index.json:", err);
+      console.error("Error fetching posts:", err);
       postsContainer.innerHTML = '<p>No posts found or error loading posts.</p>';
     }
   }
