@@ -85,65 +85,71 @@
     </div>
 
 
-    <script>
-      const postsContainer = document.getElementById('posts');
-      let allPosts = [];
+ <script>
+  const postsContainer = document.getElementById('posts');
+  let allPosts = [];
 
-      async function fetchPosts() {
+  async function fetchPosts() {
+    try {
+      const response = await fetch('static/content/blog/index.json');
+      if (!response.ok) throw new Error('Index file not found');
+      const postList = await response.json();
+
+      const posts = await Promise.all(postList.map(async (item) => {
         try {
-          const response = await fetch('static/content/blog/index.json');
-          if (!response.ok) throw new Error('Index file not found');
-          const postList = await response.json();
+          if (!item.Path || !item.Date) return null;
 
-          const posts = await Promise.all(postList.map(async (item) => {
-            try {
-              const res = await fetch(item.path);
-              if (!res.ok) return null;
-              const text = await res.text();
-              const html = marked.parse(text);
-              const date = new Date(item.date);
-              return { html, date };
-            } catch {
-              return null;
-            }
-          }));
+          const res = await fetch('static/' + item.Path);
+          if (!res.ok) return null;
 
-          allPosts = posts.filter(Boolean).sort((a, b) => b.date - a.date);
-          renderPosts(allPosts);
-        } catch (err) {
-          postsContainer.innerHTML = '<p>No posts found or error loading posts.</p>';
+          const text = await res.text();
+          const html = marked.parse(text);
+          const date = new Date(item.Date);
+
+          return { html, date };
+        } catch {
+          return null;
         }
-      }
+      }));
 
-      function renderPosts(posts) {
-        postsContainer.innerHTML = '';
-        if (posts.length === 0) {
-          postsContainer.innerHTML = '<p>No posts match your filter.</p>';
-          return;
-        }
-        posts.forEach(post => {
-          const div = document.createElement('div');
-          div.className = 'post';
-          div.innerHTML = post.html;
-          postsContainer.appendChild(div);
-        });
-      }
+      allPosts = posts.filter(Boolean).sort((a, b) => b.date - a.date);
+      renderPosts(allPosts);
+    } catch (err) {
+      postsContainer.innerHTML = '<p>No posts found or error loading posts.</p>';
+      console.error(err);
+    }
+  }
 
-      function filterPostsByDate() {
-        const value = document.getElementById('dateFilter').value;
-        if (!value) {
-          renderPosts(allPosts);
-          return;
-        }
-        const [year, month] = value.split('-');
-        const filtered = allPosts.filter(post =>
-          post.date.getFullYear() == year && (post.date.getMonth() + 1) == parseInt(month)
-        );
-        renderPosts(filtered);
-      }
+  function renderPosts(posts) {
+    postsContainer.innerHTML = '';
+    if (posts.length === 0) {
+      postsContainer.innerHTML = '<p>No posts match your filter.</p>';
+      return;
+    }
+    posts.forEach(post => {
+      const div = document.createElement('div');
+      div.className = 'post';
+      div.innerHTML = post.html;
+      postsContainer.appendChild(div);
+    });
+  }
 
-      fetchPosts();
-    </script>
+  function filterPostsByDate() {
+    const value = document.getElementById('dateFilter').value;
+    if (!value) {
+      renderPosts(allPosts);
+      return;
+    }
+    const [year, month] = value.split('-');
+    const filtered = allPosts.filter(post =>
+      post.date.getFullYear() == year && (post.date.getMonth() + 1) == parseInt(month)
+    );
+    renderPosts(filtered);
+  }
+
+  fetchPosts();
+</script>
+
 </div>
     <!-- Footer Start -->
     <div class="container-fluid bg-dark text-light footer pt-5 mt-5 wow fadeIn" data-wow-delay="0.1s">
