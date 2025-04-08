@@ -21,6 +21,7 @@ function getAllMarkdownFiles(dir) {
   return results;
 }
 
+<<<<<<< HEAD
 function capitalizeKeys(obj) {
   const newObj = {};
   for (const key in obj) {
@@ -42,6 +43,27 @@ function getFileMetadata(filePath) {
     Date: new Date(frontmatter.Date || stat.mtime).toISOString(),
     Path: path.relative(path.join(__dirname, "static"), filePath).replace(/\\/g, "/")
   };
+=======
+function capitalizeFirst(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function getMetadataFromFile(filePath) {
+  const rawContent = fs.readFileSync(filePath, "utf-8");
+  const { data } = matter(rawContent);
+
+  // Capitalize metadata keys
+  const metadata = {};
+  for (const key in data) {
+    metadata[capitalizeFirst(key)] = data[key];
+  }
+
+  metadata["Path"] = path
+    .relative(path.join(__dirname, "static"), filePath)
+    .replace(/\\/g, "/");
+
+  return metadata;
+>>>>>>> f96fe57 (Finalize changes before pull)
 }
 
 function generateIndex() {
@@ -54,10 +76,17 @@ function generateIndex() {
     }
 
     console.log("📄 Found markdown files:");
-    markdownFiles.forEach(f => console.log(" -", f));
+    markdownFiles.forEach((f) => console.log(" -", f));
 
+<<<<<<< HEAD
     const posts = markdownFiles.map(getFileMetadata);
     posts.sort((a, b) => new Date(b.Date) - new Date(a.Date));
+=======
+    const posts = markdownFiles.map(getMetadataFromFile);
+    posts.sort(
+      (a, b) => new Date(b.Date || b.date) - new Date(a.Date || a.date)
+    );
+>>>>>>> f96fe57 (Finalize changes before pull)
 
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(posts, null, 2));
     console.log(`✅ Successfully wrote ${posts.length} entries to index.json`);
